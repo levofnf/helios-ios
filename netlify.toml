@@ -1,0 +1,4 @@
+# Netlify hosts the Helios web frontend. The .ipa is built on macOS (see .github/workflows/ios.yml).
+[build]
+  publish = "src"
+  command = "echo 'Static site, no build step'"

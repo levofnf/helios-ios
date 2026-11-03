@@ -1,0 +1,55 @@
+name: Build iOS .ipa
+
+on:
+  workflow_dispatch:
+    inputs:
+      export_method:
+        description: "Export method"
+        type: choice
+        default: release-testing
+        options: [release-testing, app-store-connect, debugging]
+  push:
+    tags: ["v*"]
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    env:
+      # Required repository secrets (Settings → Secrets and variables → Actions):
+      APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}                   # base64 of your .p12
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}         # base64 of your .mobileprovision
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate app icons
+        run: npx tauri icon app-icon.svg
+
+      - name: Initialize Xcode project
+        run: npx tauri ios init --ci
+
+      - name: Build .ipa
+        run: npx tauri ios build --ci --export-method ${{ inputs.export_method || 'release-testing' }}
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Helios-ipa
+          path: src-tauri/gen/apple/build/**/*.ipa
+          if-no-files-found: error

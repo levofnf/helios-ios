@@ -1,0 +1,16 @@
+{
+  "name": "helios-ios-port",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri",
+    "icons": "tauri icon app-icon.svg",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "ios:build": "tauri ios build --export-method app-store-connect",
+    "ios:build:adhoc": "tauri ios build --export-method release-testing"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

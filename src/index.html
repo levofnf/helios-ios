@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b0b12" />
+  <title>Helios</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      min-height: 100dvh; display: grid; place-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      background: radial-gradient(circle at 50% 30%, #2a1a05 0%, #0b0b12 60%);
+      color: #f5efe6; text-align: center;
+      padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+    }
+    .sun {
+      width: 120px; height: 120px; margin: 0 auto 32px; border-radius: 50%;
+      background: radial-gradient(circle, #ffd36b 0%, #ff9a1f 55%, #e2570f 100%);
+      box-shadow: 0 0 80px 20px rgba(255, 154, 31, .35);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse { 50% { box-shadow: 0 0 120px 36px rgba(255, 154, 31, .5); } }
+    h1 { font-size: 2.4rem; letter-spacing: .02em; }
+    p { margin-top: 12px; opacity: .7; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="sun" aria-hidden="true"></div>
+    <h1>Helios iOS Port</h1>
+    <p>Running natively on iOS.</p>
+  </main>
+</body>
+</html>
