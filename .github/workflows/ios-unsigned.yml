@@ -1,0 +1,75 @@
+name: Build unsigned iOS .ipa (no Apple Developer account)
+
+# Builds an UNSIGNED .ipa that needs no secrets. Sign and install it yourself
+# with a free Apple ID using a sideloading tool such as Sideloadly or AltStore.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate app icons
+        run: npx tauri icon app-icon.svg
+
+      - name: Initialize Xcode project
+        run: npx tauri ios init --ci
+
+      - name: Turn off code signing for every Xcode build
+        run: |
+          cat > "$RUNNER_TEMP/nosign.xcconfig" <<'EOF'
+          CODE_SIGNING_ALLOWED = NO
+          CODE_SIGNING_REQUIRED = NO
+          CODE_SIGN_IDENTITY =
+          CODE_SIGN_ENTITLEMENTS =
+          DEVELOPMENT_TEAM =
+          PROVISIONING_PROFILE_SPECIFIER =
+          EOF
+          echo "XCODE_XCCONFIG_FILE=$RUNNER_TEMP/nosign.xcconfig" >> "$GITHUB_ENV"
+
+      # Compiling and archiving works unsigned. Tauri's final "export" step
+      # requires signing and is expected to fail, so the next step packages the
+      # archived app into an .ipa instead.
+      - name: Build app
+        continue-on-error: true
+        run: npx tauri ios build --ci
+
+      - name: Package unsigned .ipa
+        run: |
+          APP=$(find src-tauri/gen/apple "$HOME/Library/Developer/Xcode" -maxdepth 8 -path '*.xcarchive/Products/Applications/*.app' -type d 2>/dev/null | head -n 1)
+          if [ -z "$APP" ]; then
+            APP=$(find src-tauri/gen/apple "$HOME/Library/Developer/Xcode/DerivedData" -path '*iphoneos/*.app' -type d 2>/dev/null | head -n 1)
+          fi
+          if [ -z "$APP" ]; then
+            echo "No .app was produced. Check the 'Build app' step log for the error." >&2
+            exit 1
+          fi
+          echo "Packaging $APP"
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          (cd out && zip -qry Helios-unsigned.ipa Payload)
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Helios-unsigned-ipa
+          path: out/Helios-unsigned.ipa
+          if-no-files-found: error
