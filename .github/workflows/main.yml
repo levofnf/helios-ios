@@ -1,0 +1,36 @@
+workflows:
+  tauri-android-build:
+    name: Tauri Android Build
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      node: lts
+      java: 17
+    triggering:
+      events:
+        - push
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Install Rust
+        script: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $CM_ENV
+      - name: Install Rust Android targets
+        script: |
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+      - name: Install Android NDK
+        script: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "ndk;26.1.10909125"
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $CM_ENV
+      - name: Init Tauri Android project
+        script: |
+          # Skip this step if src-tauri/gen/android is committed to your repo
+          npx tauri android init
+      - name: Build Frontend
+        script: npm run build --if-present
+      - name: Build Tauri Android APK
+        script: npx tauri android build --apk --debug
+    artifacts:
+      - src-tauri/gen/android/app/build/outputs/apk/**/*.apk
